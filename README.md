@@ -15,77 +15,41 @@
 - **基于Netty4.X版本实现**
 
 # Quick Start
-### 服务端开发
-- **在服务端的Service下添加你自己的Service,并加上@Service注解**
-	<pre>
-	@Service
-	public class TestService {
-		public void test(User user){
-			System.out.println("调用了TestService.test");
-		}
-	}
-	</pre>
-
-- **生成1个服务接口并生成1个实现该接口的类**
-	###### 接口如下
-	<pre>
-	public interface TestRemote {
-		public Response testUser(User user);  
-	}
-	</pre>
-	###### 实现类如下，为你的实现类添加@Remote注解，该类是你真正调用服务的地方，你可以生成自己想返回给客户端的任何形式的Response
-
-	<pre> 
-	@Remote
-	public class TestRemoteImpl implements TestRemote{
-		@Resource
-		private TestService service;
-		public Response testUser(User user){
-			service.test(user);
-			Response response = ResponseUtil.createSuccessResponse(user);
-			return response;
-		}
-	}	
-	</pre>
-
-
-### 客户端开发
-- **在客户端生成一个接口，该接口为你要调用的接口**
-	<pre>
-	public interface TestRemote {
-		public Response testUser(User user);
-	}
-	</pre>
+- 该项目使用两个netty-rpc项目文件来模拟两台服务器的，通过SpringServer开启服务器
+- 服务器开启后，自动注册到zookeeper的netty节点下，不同服务器通过端口号和序列号做区分
+- 客户端开启后，自动去zookeeper轮询可适用的服务器节点
 
 ### 使用
 - **在你要调用的地方生成接口形式的属性，为该属性添加@RemoteInvoke注解**
 	<pre>
-	@RunWith(SpringJUnit4ClassRunner.class)
-	@ContextConfiguration(classes=RemoteInvokeTest.class)
-	@ComponentScan("\\")
-	public class RemoteInvokeTest {
-		@RemoteInvoke
-		public static TestRemote userremote;
-		public static User user;
-		@Test
-		public void testSaveUser(){
-			User user = new User();
-			user.setId(1000);
-			user.setName("张三");
-			userremote.testUser(user);
+  	@RunWith(SpringJUnit4ClassRunner.class)
+		@ContextConfiguration(classes = RemoteInvokeTest.class)
+		@ComponentScan("hank.wang")
+  
+		public class RemoteInvokeTest {
+    	
+  		@RemoteInvoke
+			private UserRemote userRemote;
+	
+			@Test
+			public void testSaveUserMultipleTimes() throws InterruptedException {
+				User user = new User();
+				user.setName("hank");
+		
+				// 模拟10000次客户端请求
+				for (int i = 0; i < 10000; i++) {
+					user.setId(i);
+					// 模拟发送请求
+					userRemote.saveUser(user);
+				}
+			}
 		}
-	}	
 	</pre>
 
 ### 结果
 - **一万次调用结果**
-![Markdown](https://s1.ax1x.com/2018/07/06/PZMMBF.png)
+![10000result](resource/10000result.png)
 
-- **十万次调用结果**
-![Markdown](https://s1.ax1x.com/2018/07/06/PZM3N9.png)
-
-- **一百万次调用结果**
-![Markdown](https://s1.ax1x.com/2018/07/06/PZMY1x.png)
 
 
 
